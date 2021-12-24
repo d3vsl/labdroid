@@ -13,7 +13,10 @@ class HomeViewModelFactory(
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-        return HomeViewModel(application, pokemonRepository) as T
+        return HomeViewModel(
+            application,
+            pokemonRepository
+        ) as T
     }
 
 }

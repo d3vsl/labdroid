@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -15,27 +14,47 @@ import hks.dev.play.labdroid.databinding.FragmentHomeBinding
 import hks.dev.play.labdroid.network.NetworkManager
 import hks.dev.play.labdroid.network.NetworkService
 import hks.dev.play.labdroid.network.PokemonRepository
-import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
 class HomeFragment : Fragment() {
+
     private val TAG = "HomeFragment"
 
-    private val homeViewModel by viewModels<HomeViewModel> {
+    private val homeViewModel by lazy {
         val networkService = NetworkManager
             .provideRetrofit(NetworkManager.provideOkHttpClient())
             .create(NetworkService::class.java)
         val repository = PokemonRepository(networkService)
-        HomeViewModelFactory(
-            application = activity?.application!!,
-            pokemonRepository = repository
-        )
-    }
-    private var _binding: FragmentHomeBinding? = null
 
+        ViewModelProvider(
+            this,
+            HomeViewModelFactory(
+                activity?.application!!,
+                repository
+            )
+        ).get(HomeViewModel::class.java)
+    }
+
+    private val savedStateHomeViewModel by lazy {
+        val networkService = NetworkManager
+            .provideRetrofit(NetworkManager.provideOkHttpClient())
+            .create(NetworkService::class.java)
+        val repository = PokemonRepository(networkService)
+
+        ViewModelProvider(
+            this,
+            SavedStateHomeViewModelFactory(
+                activity?.application!!,
+                this,
+                repository
+            )
+        ).get(SavedStateHomeViewModel::class.java)
+    }
+
+    private var _binding: FragmentHomeBinding? = null
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
@@ -102,7 +121,7 @@ class HomeFragment : Fragment() {
 //        channel.close()
 
         lifecycleScope.launchWhenStarted {
-            val take2FromFlow: Flow<Any> =  flowFunction().take(2)
+            val take2FromFlow: Flow<Any> = flowFunction().take(2)
             Log.d(TAG, "flowFunction: take2FromFlow: ${take2FromFlow.toString()}")
 
             val first = take2FromFlow.collect()
